@@ -10,8 +10,7 @@ public:
   sphere(const point3 &center, double radius)
       : center(center), radius(std::fmax(0, radius)) {};
 
-  bool hit(const ray &r, double ray_tmin, double ray_tmax,
-           hit_record &rec) const override {
+  bool hit(const ray &r, interval ray_t, hit_record &rec) const override {
 
     // we get these numbers by essentially breaking down the function for a
     // sphere into a quadratic function and then solving for t (the point along
@@ -42,9 +41,9 @@ public:
     auto sqrtd = std::sqrt(discriminant);
 
     auto root = (h - sqrtd) / a;
-    if (root <= ray_tmin || ray_tmax <= root) {
+    if (!ray_t.surrounds(root)) {
       root = (h + sqrtd) / a;
-      if (root <= ray_tmin || ray_tmax <= root) {
+      if (!ray_t.surrounds(root)) {
         return false;
       }
     }
@@ -52,7 +51,7 @@ public:
     rec.t = root;
     rec.p = r.at(root);
     vec3 outward_normal = (rec.p - center) / radius;
-		rec.set_front_face(r, outward_normal);
+    rec.set_front_face(r, outward_normal);
 
     return true;
   }

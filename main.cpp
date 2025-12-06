@@ -1,4 +1,5 @@
 
+#include "interval.h"
 #include "rt_constants.h"
 
 #include "hittable.h"
@@ -8,18 +9,9 @@
 vec3 nice_pink =
     color(double(255 / 255.999), double(186 / 255.999), double(239 / 255.999));
 
-bool hit_edge_of_sphere(const point3 &center, double radius, const ray &r) {
-  vec3 oc = center - r.origin();
-  auto a = dot(r.direction(), r.direction());
-  auto b = dot(-2.0 * r.direction(), oc);
-  auto c = dot(oc, oc) - radius * radius;
-  auto discriminant = b * b - 4 * a * c;
-  return discriminant == 0;
-}
-
 color ray_color(const ray &r, const hittable_list &world) {
   hit_record hit_rec;
-  if (world.hit(r, 0, infinity, hit_rec)) {
+  if (world.hit(r, interval(0, infinity), hit_rec)) {
     return 0.5 * (hit_rec.normal + color(1, 1, 1));
   }
 
