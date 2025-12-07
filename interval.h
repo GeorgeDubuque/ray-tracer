@@ -1,6 +1,8 @@
 #ifndef INTERVAL_H
 #define INTERVAL_H
+
 #include "rt_constants.h"
+
 class interval {
 
 public:
@@ -15,6 +17,14 @@ public:
   bool contains(double value) const { return min <= value && value <= max; }
 
   bool surrounds(double value) const { return min < value && value < max; }
+
+  double clamp(double x) const {
+    if (x < min)
+      return min;
+    if (x > max)
+      return max;
+    return x;
+  }
 
   static const interval empty, universe;
 };
