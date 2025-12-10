@@ -3,11 +3,14 @@
 
 #include "color.h"
 #include "hittable.h"
+#include "rt_constants.h"
+#include "vec3.h"
 
 class camera {
 public:
   double aspect_ratio = 1.0;
   int image_width = 100;
+  int samples_per_pixel = 10;
 
   void render(const hittable &world) {
     initialize();
@@ -17,13 +20,18 @@ public:
     for (int j = 0; j < image_height; j++) {
       std::clog << "\rScanlines remaining: " << (image_width - j);
       for (int i = 0; i < image_width; i++) {
-        auto pixel_center =
-            pixel100_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-        auto ray_direction = pixel_center - center;
-        ray r(center, ray_direction);
+        color pixel_color = color(0, 0, 0);
+        for (int k = 0; k < samples_per_pixel; k++) {
+          ray r = get_ray(i, j);
+          pixel_color += ray_color(r, world);
+        }
+        // auto pixel_center =
+        //     pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+        // auto ray_direction = pixel_center - center;
+        // ray r(center, ray_direction);
 
-        color pixel_color = ray_color(r, world);
-        write_color(std::cout, pixel_color);
+        // color pixel_color = ray_color(r, world);
+        write_color(std::cout, pixel_color / samples_per_pixel);
       }
     }
     std::clog << "\rDone.                      \n";
@@ -32,9 +40,10 @@ public:
 private:
   int image_height;
   point3 center;
-  point3 pixel100_loc;
+  point3 pixel00_loc;
   vec3 pixel_delta_u;
   vec3 pixel_delta_v;
+  double pixel_sample_scale;
 
   void initialize() {
 
@@ -42,12 +51,13 @@ private:
     image_height = image_height < 1 ? 1 : image_height;
 
     center = point3(0, 0, 0);
+
+    pixel_sample_scale = 1.0 / samples_per_pixel;
     // Camera
     auto focal_length = 1.0;
     auto viewport_height = 2.0;
     auto viewport_width =
         viewport_height * (double(image_width) / image_height);
-
 
     auto viewport_u = vec3(viewport_width, 0, 0);
     auto viewport_v = vec3(0, -viewport_height, 0);
@@ -57,13 +67,28 @@ private:
 
     // need to move forward by focal length and then move
     // to the top left of the viewport
-    auto viewport_upper_left = center - vec3(0, 0, focal_length) -
-                               viewport_u / 2 - viewport_v / 2;
+    auto viewport_upper_left =
+        center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
 
     // essentially getting the diaganol vector to the first pixel from the
     // viewport top left to the first pixel and dividing in half
-    pixel100_loc =
-        viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+    pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+  }
+
+  ray get_ray(double i, double j) const {
+    vec3 offset = sample_square();
+    vec3 sample_point = pixel00_loc + ((i + offset.x()) * pixel_delta_u) +
+                        ((j + offset.y()) * pixel_delta_v);
+    vec3 ray_origin = center;
+    vec3 ray_direction = sample_point - ray_origin;
+    return ray(ray_origin, ray_direction);
+  }
+
+  vec3 sample_square() const {
+    // return a random point in the unit square we can use to offset our sample
+    // ray we are subtracting by 0.5 to ensure the values are within -0.5 and
+    // +0.5
+    return vec3(random_double() - 0.5, random_double() - 0.5, 0);
   }
 
   color ray_color(const ray &r, const hittable &world) {
