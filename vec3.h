@@ -1,6 +1,7 @@
 #ifndef VEC3_H
 #define VEC3_H
 
+#include "rt_constants.h"
 #include <cmath>
 #include <iostream>
 #include <ostream>
@@ -39,6 +40,15 @@ public:
 
   double length_squared() const {
     return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+  }
+
+  static vec3 random() {
+    return vec3(random_double(), random_double(), random_double());
+  }
+
+  static vec3 random(double min, double max) {
+    return vec3(random_double(min, max), random_double(min, max),
+                random_double(min, max));
   }
 };
 
@@ -79,4 +89,33 @@ inline vec3 cross(const vec3 &u, const vec3 &v) {
               u.e[0] * v.e[1] - u.e[1] * v.e[0]);
 }
 inline vec3 unit_vector(const vec3 &v) { return v / v.length(); }
+
+// this function basically generates a random vector that lands on
+// the unit spheres surface
+//
+// we are doing a check to lensq > 1e-160 in case that the random numbers
+// are very small resulting in underflow and a unit length equal to zero
+// in this case we ignore that vector
+//
+// TODO: i still dont understand why we are using a rejection method for
+// this couldnt why cant we just use the first random p we get and then
+// normalize it to be on the surface of the unit sphere???
+inline vec3 random_unit_vector() {
+  while (true) {
+    auto p = vec3::random(-1, 1);
+    auto lensq = p.length_squared();
+    if (lensq > 1e-160 && lensq <= 1) {
+      return p / sqrt(lensq);
+    }
+  }
+}
+
+inline vec3 random_on_hemisphere(const vec3 &normal) {
+  vec3 on_unit_sphere = random_unit_vector();
+  if (dot(normal, on_unit_sphere) > 0.0) {
+    return on_unit_sphere;
+  } else {
+    return -on_unit_sphere;
+  }
+}
 #endif

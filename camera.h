@@ -11,6 +11,7 @@ public:
   double aspect_ratio = 1.0;
   int image_width = 100;
   int samples_per_pixel = 10;
+  int max_depth = 10;
 
   void render(const hittable &world) {
     initialize();
@@ -23,14 +24,8 @@ public:
         color pixel_color = color(0, 0, 0);
         for (int k = 0; k < samples_per_pixel; k++) {
           ray r = get_ray(i, j);
-          pixel_color += ray_color(r, world);
+          pixel_color += ray_color(r, max_depth, world);
         }
-        // auto pixel_center =
-        //     pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-        // auto ray_direction = pixel_center - center;
-        // ray r(center, ray_direction);
-
-        // color pixel_color = ray_color(r, world);
         write_color(std::cout, pixel_color / samples_per_pixel);
       }
     }
@@ -91,10 +86,15 @@ private:
     return vec3(random_double() - 0.5, random_double() - 0.5, 0);
   }
 
-  color ray_color(const ray &r, const hittable &world) {
+  color ray_color(const ray &r, int depth, const hittable &world) {
+    if (depth <= 0) {
+      return color(0, 0, 0);
+    }
+
     hit_record hit_rec;
     if (world.hit(r, interval(0, infinity), hit_rec)) {
-      return 0.5 * (hit_rec.normal + color(1, 1, 1));
+      vec3 direction = random_on_hemisphere(hit_rec.normal);
+      return 0.5 * ray_color(ray(hit_rec.p, direction), depth - 1, world);
     }
 
     // linear interp
