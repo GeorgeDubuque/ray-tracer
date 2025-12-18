@@ -4,6 +4,8 @@
 #include "ray.h"
 #include "vec3.h"
 
+class material;
+
 class hit_record {
 
 public:
@@ -11,6 +13,7 @@ public:
   point3 p;
 	// the normal at the hit point of the hittable
   vec3 normal;
+	shared_ptr<material> mat;
 	// the point along the ray in which we hit the hittable
   double t;
 	// whether or not we hit the front or back face of the hittable

@@ -3,6 +3,7 @@
 
 #include "color.h"
 #include "hittable.h"
+#include "material.h"
 #include "rt_constants.h"
 #include "vec3.h"
 
@@ -92,9 +93,26 @@ private:
     }
 
     hit_record hit_rec;
-    if (world.hit(r, interval(0, infinity), hit_rec)) {
-      vec3 direction = random_on_hemisphere(hit_rec.normal);
-      return 0.5 * ray_color(ray(hit_rec.p, direction), depth - 1, world);
+    if (world.hit(r, interval(0.001, infinity), hit_rec)) {
+
+      // old diffusion model where choose a random reflection vector off
+      // the surface of the sphere
+      // vec3 direction = random_on_hemisphere(hit_rec.normal);
+
+      // we are now moving to custom meterials which will have there own
+      // reflection models
+      // vec3 direction = hit_rec.normal + random_unit_vector();
+      // return 0.1 * ray_color(ray(hit_rec.p, direction), depth - 1, world);
+
+      // new slightly different diffusion model where we have two unit spheres
+      // one on the inside of of the hit point on the sphere and one on the
+      // outside then we only use the one on the outide of the unit vector
+      ray scattered;
+      color attenuation;
+      if (hit_rec.mat->scatter(r, hit_rec, attenuation, scattered)) {
+        return attenuation * ray_color(scattered, depth - 1, world);
+      }
+      return color(0, 0, 0);
     }
 
     // linear interp
