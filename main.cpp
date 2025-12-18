@@ -5,7 +5,7 @@
 #include "hittable_list.h"
 #include "sphere.h"
 
-vec3 nice_pink =
+color nice_pink =
     color(double(255 / 255.999), double(186 / 255.999), double(239 / 255.999));
 
 int main() {
